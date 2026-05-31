@@ -1,0 +1,106 @@
+{
+  "metadata": {
+    "paper": "Finding Blind Spots in Evaluator LLMs with Interpretable Checklists (EMNLP 2024)",
+    "section": "P1 — Introduction & Motivation",
+    "note": "priority: 'primary' = ảnh chính cho slide, 'secondary' = ảnh phụ/tùy chọn"
+  },
+  "slides": [
+    {
+      "slide_id": 1,
+      "slide_title": "LLM-as-a-Judge là gì?",
+      "images": [
+        {
+          "url": "https://cdn.prod.website-files.com/660ef16a9e0687d9cc27474a/66f7172913e46c4ec934e125_66f713c6b6ec50d4357dc78b_16_llm_judge_process-min.png",
+          "description": "Sơ đồ toàn cảnh quy trình LLM-as-a-Judge: Input Prompt + Generated Response -> Evaluator LLM -> Score & Justification. Sơ đồ này cho thấy các bước từ dữ liệu đầu vào đến đầu ra đánh giá.",
+          "source": "EvidentlyAI LLM-as-a-Judge Guide",
+          "priority": "primary",
+          "usage_note": "Đặt ở vị trí trung tâm bên phải slide để minh họa rõ nét cơ chế hoạt động chung của LLM-as-a-Judge."
+        },
+        {
+          "url": "https://cdn.prod.website-files.com/660ef16a9e0687d9cc27474a/66f7172913e46c4ec934e09d_66f700a47de5d26f89da9f4f_00_llm_judge_guide_s.jpeg",
+          "description": "Hình ảnh minh họa mang tính biểu trưng (hero image) về robot trong vai trò làm trọng tài phân xử - đại diện cho khái niệm LLM đóng vai trò giám khảo đánh giá và duy trì các leaderboard.",
+          "source": "EvidentlyAI LLM-as-a-Judge Guide",
+          "priority": "secondary",
+          "usage_note": "Đặt ở góc dưới slide làm hình ảnh visual trang trí sinh động, thu hút người xem."
+        }
+      ]
+    },
+    {
+      "slide_id": 2,
+      "slide_title": "Tại sao đây là vấn đề?",
+      "images": [
+        {
+          "url": "https://cdn.prod.website-files.com/660ef16a9e0687d9cc27474a/66f7172913e46c4ec934e0be_66f71596db1d63bc73003b9b_21_llm_judge_prompt_binary.png",
+          "description": "Sơ đồ so sánh và phân tích cấu trúc prompt đánh giá của LLM judge, chỉ ra các điểm yếu và lý do dẫn đến các định kiến hệ thống (systemic biases).",
+          "source": "EvidentlyAI LLM-as-a-Judge Guide",
+          "priority": "primary",
+          "usage_note": "Đặt ngay cạnh bảng liệt kê các biases (position bias, verbosity bias, self-preference bias) để tăng hiệu quả diễn giải trực quan."
+        },
+        {
+          "url": "https://cdn.prod.website-files.com/660ef16a9e0687d9cc27474a/66f7172913e46c4ec934e0c4_66f7163c669859a3c5e8910d_24_llm_judge_prompt_reasoning.png",
+          "description": "Ví dụ về một prompt đánh giá cực kỳ phức tạp với các tiêu chí (criteria) và thang điểm khắt khe, minh họa cho việc các phương pháp thiết lập prompt đánh giá truyền thống vẫn dễ dàng bị qua mặt.",
+          "source": "EvidentlyAI LLM-as-a-Judge Guide",
+          "priority": "secondary",
+          "usage_note": "Dùng để minh họa cho phần hạn chế của phương pháp hiện tại (correlation-based) và sự cần thiết của một checklist chẩn đoán chi tiết."
+        }
+      ]
+    },
+    {
+      "slide_id": 3,
+      "slide_title": "Câu hỏi nghiên cứu",
+      "images": [
+        {
+          "url": "https://arxiv.org/html/2406.13439v2/x1.png",
+          "description": "Figure 1 từ paper gốc FBI — Sơ đồ kiến trúc tổng quan của FBI meta-evaluation checklist, minh họa việc chia nhỏ câu hỏi nghiên cứu thành 4 sub-questions tương ứng với 4 nhóm năng lực (LF, F, IF, R).",
+          "source": "FBI paper (arXiv:2406.13439)",
+          "priority": "primary",
+          "usage_note": "Bắt buộc hiển thị ở kích thước lớn tại trung tâm slide để khán giả theo dõi trực quan các nhánh năng lực đang được chất vấn."
+        },
+        {
+          "url": "https://cdn.prod.website-files.com/660ef16a9e0687d9cc27474a/66f7172913e46c4ec934e10f_66f715e6303df70c2274f975_23_CoT.png",
+          "description": "Sơ đồ minh họa quá trình suy luận lập luận của LLM (Chain-of-Thought reasoning), hỗ trợ giải thích cơ chế tại sao phương pháp perturbation-based lại có thể kiểm tra sâu sắc năng lực tư duy thực sự của mô hình giám khảo.",
+          "source": "EvidentlyAI LLM-as-a-Judge Guide",
+          "priority": "secondary",
+          "usage_note": "Đặt ở góc dưới slide để làm rõ sự tương phản và tính ưu việt của phương pháp perturbation-based so với correlation-based truyền thống."
+        }
+      ]
+    },
+    {
+      "slide_id": 4,
+      "slide_title": "Giới thiệu FBI Framework",
+      "images": [
+        {
+          "url": "https://arxiv.org/html/2406.13439v2/x1.png",
+          "description": "Figure 1 từ paper gốc — Sơ đồ chi tiết hóa toàn bộ quy trình vận hành của FBI framework: từ Prompt Selection, chèn targeted perturbations (22 loại lỗi), Human-in-the-loop validation, cho đến 3 paradigms đánh giá trên các evaluator LLMs.",
+          "source": "FBI paper (arXiv:2406.13439)",
+          "priority": "primary",
+          "usage_note": "Đặt làm ảnh chính ở bên phải để giải thích chi tiết cấu trúc dữ liệu, quy trình tạo 2400 perturbed answers và logic đánh giá hạ điểm."
+        },
+        {
+          "url": "https://arxiv.org/html/2406.13439v2/x3.png",
+          "description": "Figure 3 từ paper gốc FBI — Giao diện của công cụ chú thích (annotation tool) được nhóm tác giả sử dụng cho quy trình Human-in-the-Loop, nơi 17 sinh viên sau đại học kiểm duyệt và gắn nhãn thủ công từng dòng lỗi.",
+          "source": "FBI paper (arXiv:2406.13439)",
+          "priority": "secondary",
+          "usage_note": "Đặt nhỏ ở góc dưới slide để chứng minh tính học thuật nghiêm ngặt, độ tin cậy tuyệt đối và quy mô thực nghiệm chuẩn chỉnh của bộ dữ liệu FBI."
+        }
+      ]
+    }
+  ],
+  "bonus_images": {
+    "note": "Các ảnh bổ sung chất lượng cao dùng cho slide tiêu đề (Title slide) hoặc slide chuyển tiếp (Transition slides) của phần P1",
+    "items": [
+      {
+        "url": "https://cdn.prod.website-files.com/660ef16a9e0687d9cc27474a/66f7172913e46c4ec934e11e_66f7012155f808452041417a_04_robots_pointing-s-min.jpeg",
+        "description": "Hình ảnh hoạt họa sinh động mô tả các robot đang chỉ trỏ và đánh giá lẫn nhau — cực kỳ phù hợp và thu hút thị giác để làm hình nền cho slide tiêu đề chính P1.",
+        "source": "EvidentlyAI LLM-as-a-Judge Guide",
+        "usage_note": "Dùng làm background hoặc hình ảnh đại diện cho slide tiêu đề 'Introduction & Motivation' của toàn bài thuyết trình."
+      },
+      {
+        "url": "https://cdn.prod.website-files.com/660ef16a9e0687d9cc27474a/66f7172913e46c4ec934e118_66f70192027e07a8494c7e74_06_llm_judge_process-min.png",
+        "description": "Bản đồ luồng xử lý toàn diện của LLM judge — rất thích hợp làm slide tóm tắt chuyển tiếp sang các phần kỹ thuật tiếp theo.",
+        "source": "EvidentlyAI LLM-as-a-Judge Guide",
+        "usage_note": "Dùng làm visual tóm tắt cuối phần P1 để dẫn dắt sang phần P2 (Benchmark Construction)."
+      }
+    ]
+  }
+}
