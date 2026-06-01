@@ -1,0 +1,79 @@
+{
+  "metadata": {
+    "paper": "Finding Blind Spots in Evaluator LLMs with Interpretable Checklists (EMNLP 2024)",
+    "section": "P2 — FBI Framework: Benchmark Construction",
+    "note": "priority: 'primary' = ảnh chính cho slide, 'secondary' = ảnh phụ/tùy chọn"
+  },
+  "slides": [
+    {
+      "slide_id": 1,
+      "slide_title": "Tổng quan quy trình tạo benchmark",
+      "images": [
+        {
+          "url": "Grad_NLP/P2/benchmark_infographic.png",
+          "description": "Figure 1 từ paper FBI: sơ đồ tổng quan framework và luồng xử lý benchmark",
+          "source": "P2/images",
+          "priority": "primary",
+          "usage_note": "Đặt ở trung tâm slide để giới thiệu toàn bộ pipeline benchmark construction"
+        }
+      ]
+    },
+    {
+      "slide_id": 2,
+      "slide_title": "4 Task Categories",
+      "images": [
+        {
+          "url": "Grad_NLP/P2/four_categories_img.png",
+          "description": "Figure minh họa các task abilities/categories trong paper",
+          "source": "P2/images",
+          "priority": "primary",
+          "usage_note": "Đã sử dụng file nguồn chính xác: four_categories_img.png"
+        }
+      ]
+    },
+    {
+      "slide_id": 3,
+      "slide_title": "22 Perturbation Categories (Table 2)",
+      "images": [
+        {
+          "url": "Grad_NLP/P2/22_perturbation.png",
+          "description": "Ảnh bảng/figure về perturbation categories từ paper (để minh họa Table 2)",
+          "source": "P2/images",
+          "priority": "primary",
+          "usage_note": "Nếu ảnh này không load trên công cụ slide, chụp lại Table 2 từ PDF và chèn thay thế"
+        }
+      ]
+    },
+    {
+      "slide_id": 4,
+      "slide_title": "Perturbation Generation + Human-in-the-Loop",
+      "images": [
+        {
+          "url": "Grad_NLP/P2/perturbation_generation_human_in_loop.png",
+          "description": "Figure 3 từ paper: annotation tool cho human review perturbations",
+          "source": "P2/images",
+          "priority": "primary",
+          "usage_note": "Ảnh tham chiếu của slide này, bắt buộc ưu tiên để nhấn mạnh human validation"
+        }
+      ]
+    },
+    {
+      "slide_id": 5,
+      "slide_title": "Score-Invariant Perturbations",
+      "images": [
+        {
+          "url": "Grad_NLP/P2/22_perturbation.png",
+          "description": "Ảnh minh họa score-invariant perturbations",
+          "source": "P2/images",
+          "priority": "primary",
+          "usage_note": "Đặt cùng ví dụ paraphrase để nhấn mạnh không phải thay đổi nào cũng nên bị phạt, liên hệ với metric SI, tạo khung khoanh vùng phần SI trong ảnh 22 perturbation categories"
+        }
+      ]
+    },
+    {
+      "slide_id": 6,
+      "slide_title": "Insights",
+      "images": []
+    }
+  ]
+}
