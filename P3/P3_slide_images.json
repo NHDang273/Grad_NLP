@@ -1,0 +1,79 @@
+{
+  "metadata": {
+    "paper": "Finding Blind Spots in Evaluator LLMs with Interpretable Checklists (EMNLP 2024)",
+    "section": "P3 — Evaluation Strategies (Section 4)",
+    "note": "No images — text-only slides with examples (Vietnamese)"
+  },
+  "slides": [
+    {
+      "slide_id": 1,
+      "slide_title": "Tổng quan 3 Evaluation Paradigms",
+      "bullets": [
+        "Nghiên cứu tập trung đánh giá dựa trên 3 phương pháp:",
+        "Single-answer scoring: Chấm điểm độc lập một câu trả lời duy nhất dựa trên tri thức sẵn có của mô hình, thay vì so sánh hay đối chiếu với đáp án mẫu.",
+        "Pairwise comparison: Mô hình đánh giá được cung cấp hai câu trả lời cùng lúc, nhiệm vụ là so sánh rồi chọn ra câu trả lời tốt hơn (hoặc xác định chúng ngang nhau).",
+        "Reference-guided evaluation: Chấm điểm dựa trên so sánh với đáp án mẫu chuẩn xác."
+      ]
+    },
+    {
+      "slide_id": 2,
+      "slide_title": "4.1 Single-answer Scoring",
+      "bullets": [
+        "Vanilla*: Chỉ nhận câu hỏi + câu trả lời → trực tiếp đưa ra điểm số.",
+        "Vanilla: Tương tự Vanilla*, nhưng yêu cầu đưa ra lời giải thích trước khi cho điểm.",
+        "Rubric: Cung cấp thêm bảng tiêu chí chấm điểm (rubric) để hướng dẫn cách chấm lỗi và phân bổ điểm.",
+        "Axis: Tập trung kiểm tra câu trả lời theo một khía cạnh cụ thể phù hợp với loại câu hỏi.",
+        "Axis+Rubric: Kết hợp chỉ định khía cạnh cần đánh giá (Axis) và cung cấp quy tắc chấm điểm chi tiết (Rubric)."
+      ],
+      "example": {
+        "question": "Tóm tắt cuộc đời và sự nghiệp của Isaac Newton.",
+        "response": "Isaac Newton là nhà toán học, vật lý học và thiên văn học người Anh. Ông đã phát biểu các định luật về chuyển động và vạn vật hấp dẫn, phát minh ra phép tính vi tích phân, và có những đóng góp đột phá trong lĩnh vực quang học...",
+        "variants": {
+          "Vanilla*": "Điểm: 9/10",
+          "Vanilla": "Giải thích: 'Câu trả lời đã bao quát chính xác và đầy đủ các thành tựu chính của Newton. Có đề cập đến những đóng góp quan trọng trong vật lý, toán học và thiên văn học.' → Điểm: 9/10",
+          "Rubric": "Tiêu chí: độ chính xác 40%, độ đầy đủ 30%, độ rõ ràng 20%, độ súc tích 10% → 'Chính xác: 9, Đầy đủ: 9, Rõ ràng: 9, Súc tích: 8' → Điểm: 8.8/10",
+          "Axis": "Khía cạnh: độ chính xác thực tế → 'Không phát hiện lỗi sai thực tế nào.' → Điểm: 9/10",
+          "Axis+Rubric": "Khía cạnh: độ chính xác + tiêu chí chi tiết → 'Tất cả thông tin được xác minh, không có ảo giác.' → Điểm: 9/10"
+        }
+      }
+    },
+    {
+      "slide_id": 3,
+      "slide_title": "4.2 Pairwise Comparison",
+      "bullets": [
+        "Pairwise*: Nhận câu hỏi + hai câu trả lời → trực tiếp đưa ra phán quyết bên nào thắng, không cần giải thích.",
+        "Pairwise: Tương tự Pairwise*, nhưng bắt buộc đưa ra lý do trước khi chốt phán quyết.",
+        "Rules: Cung cấp thêm bộ quy tắc ứng xử và tiêu chí so sánh chi tiết để hướng dẫn cách phân xử.",
+        "Axis: Yêu cầu so sánh hai câu trả lời dựa trên một khía cạnh cụ thể phù hợp với thể loại câu hỏi.",
+        "Axis+Rules: Kết hợp chỉ định khía cạnh cần soi xét (Axis) cùng quy tắc chấm điểm chi tiết (Rules)."
+      ],
+      "example": {
+        "question": "Tôi có thể làm gì trong 6 ngày ở Đà Lạt?",
+        "response_A1": "Đà Lạt là một điểm đến tuyệt vời. Bạn có thể tham quan Hồ Xuân Hương, Thung Lũng Tình Yêu và chợ đêm Đà Lạt. Thưởng thức ẩm thực địa phương.",
+        "response_A2": "Ngày 1 — Khám phá Hồ Xuân Hương và dạo phố trung tâm. Ngày 2 — Tham quan Thung Lũng Tình Yêu và đồi Mộng Mơ. Ngày 3 — Ghé Thiền Viện Trúc Lâm và hồ Tuyền Lâm. Ngày 4 — Khám phá làng hoa Vạn Thành và vườn dâu tây. Ngày 5 — Chinh phục đỉnh Langbiang. Ngày 6 — Thư giãn tại quán cà phê view đồi và chợ đêm.",
+        "variants": {
+          "Pairwise*": "Phán quyết: [[A₂]]",
+          "Pairwise": "Giải thích: 'A₂ đưa ra lịch trình chi tiết từng ngày với các địa điểm cụ thể, giúp người dùng dễ dàng lên kế hoạch hơn hẳn A₁.' → Phán quyết: [[A₂]]",
+          "Rules": "Quy tắc: độ liên quan 30%, chi tiết 30%, tính thực tiễn 20%, cấu trúc 20% → 'A₂ vượt trội về chi tiết và cấu trúc.' → Phán quyết: [[A₂]]",
+          "Axis": "Khía cạnh: tuân thủ yêu cầu → 'A₂ cung cấp kế hoạch trọn vẹn 6 ngày. A₁ chỉ đưa ra gợi ý chung chung.' → Phán quyết: [[A₂]]",
+          "Axis+Rules": "Khía cạnh: tuân thủ yêu cầu + quy tắc chi tiết → 'A₂ đáp ứng đầy đủ yêu cầu 6 ngày với kế hoạch cụ thể từng ngày.' → Phán quyết: [[A₂]]"
+        }
+      }
+    },
+    {
+      "slide_id": 4,
+      "slide_title": "4.3 Reference-guided Evaluation",
+      "bullets": [
+        "Cách thức: Evaluator LLM nhận câu hỏi, đáp án mẫu chuẩn xác và câu trả lời cần chấm. Nhiệm vụ là so sánh độ khớp, tính chính xác của câu trả lời dựa trên đáp án mẫu rồi đưa ra lời giải thích kèm điểm số.",
+        "Hạn chế: Phương pháp này không khả thi cho nhiều câu hỏi dạng mở (open-ended questions) vì câu hỏi mở không có một đáp án cố định hay duy nhất."
+      ],
+      "example": {
+        "question": "Chức năng chính của tụ điện trong mạch điện là gì?",
+        "reference_answer": "Tụ điện lưu trữ năng lượng điện trong một điện trường. Nó gồm hai bản dẫn đặt cách nhau bởi một lớp điện môi. Trong mạch điện, tụ điện được dùng để lưu trữ năng lượng, lọc nhiễu và làm mịn dao động điện áp.",
+        "model_response": "Tụ điện dùng để lưu trữ năng lượng trong các mạch điện tử.",
+        "evaluation": "Giải thích: 'Câu trả lời đã nêu được chức năng cốt lõi (lưu trữ năng lượng) nhưng thiếu cơ chế hoạt động (điện trường), cấu tạo vật lý (hai bản dẫn + lớp điện môi) và các ứng dụng cụ thể (lọc nhiễu, làm mịn điện áp).' → Điểm: 5/10",
+        "limitation_note": "Không áp dụng được cho câu hỏi mở (vd: 'Tóm tắt cuộc đời Isaac Newton') vì không có đáp án mẫu duy nhất."
+      }
+    }
+  ]
+}
