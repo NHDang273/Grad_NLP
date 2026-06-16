@@ -1,0 +1,162 @@
+{
+  "metadata": {
+    "paper": "Finding Blind Spots in Evaluator LLMs with Interpretable Checklists (EMNLP 2024)",
+    "section": "P5 — Multi-model Results + Conclusion",
+    "note": "Ưu tiên ảnh từ paper. Các file trong Grad_NLP/P5/images cần được export thủ công từ PDF."
+  },
+
+  "slides": [
+    {
+      "slide_id": 1,
+      "slide_title": "So sánh các model — Reference-less (Table 4)",
+
+      "images": [
+        {
+          "url": "Grad_NLP/P5/images/table4_reference_less_crop.png",
+          "description": "Crop Table 4 phần Vanilla + Axis+Rules. So sánh GPT-4-Turbo, Gemini, Claude và LLaMA trong các paradigms reference-less.",
+          "source": "Paper Table 4",
+          "priority": "primary",
+          "usage_note": "Ảnh quan trọng nhất của slide. Đặt bên phải, nội dung phân tích bên trái."
+        },
+
+        {
+          "url": "https://cdn.prod.website-files.com/660ef16a9e0687d9cc27474a/66f7172913e46c4ec934e118_66f70192027e07a8494c7e74_06_llm_judge_process-min.png",
+          "description": "LLM-as-a-Judge workflow",
+          "source": "EvidentlyAI",
+          "priority": "secondary",
+          "usage_note": "Dùng nếu cần lấp khoảng trống hoặc làm nền trực quan."
+        }
+      ]
+    },
+
+    {
+      "slide_id": 2,
+      "slide_title": "Bất ngờ — LLaMA tốt nhất ở Reference-Based",
+
+      "images": [
+        {
+          "url": "Grad_NLP/P5/images/table4_reference_crop.png",
+          "description": "Crop Table 4 phần Reference Evaluation. Hiển thị LLaMA-3-70B đạt kết quả tốt nhất.",
+          "source": "Paper Table 4",
+          "priority": "primary",
+          "usage_note": "Phóng to hàng LLaMA để nhấn mạnh kết quả 3%, 1%, 5%."
+        },
+
+        {
+          "url": "https://cdn.prod.website-files.com/660ef16a9e0687d9cc27474a/66f7172913e46c4ec934e0c7_66f7026ce96747f979aef2e8_11_llm_reference_eval-min.png",
+          "description": "Reference-based evaluation diagram",
+          "source": "EvidentlyAI",
+          "priority": "secondary",
+          "usage_note": "Minh họa cơ chế evaluator so sánh với reference answer."
+        }
+      ]
+    },
+
+    {
+      "slide_id": 3,
+      "slide_title": "Prometheus 2 — Trained Evaluator có tốt hơn không?",
+
+      "images": [
+        {
+          "url": "Grad_NLP/P5/images/table4_prometheus_crop.png",
+          "description": "Crop Table 4 tập trung vào hàng Prometheus 2 và GPT-4-Turbo để so sánh trực tiếp.",
+          "source": "Paper Table 4",
+          "priority": "primary",
+          "usage_note": "Highlight sự chênh lệch lớn giữa GPT-4-Turbo và Prometheus 2."
+        },
+
+        {
+          "url": "https://cdn.prod.website-files.com/660ef16a9e0687d9cc27474a/66f7172913e46c4ec934e118_66f70192027e07a8494c7e74_06_llm_judge_process-min.png",
+          "description": "LLM evaluator workflow",
+          "source": "EvidentlyAI",
+          "priority": "secondary",
+          "usage_note": "Dùng như ảnh nền minh họa cho evaluator model."
+        }
+      ]
+    },
+
+    {
+      "slide_id": 4,
+      "slide_title": "Tổng kết — Blind Spots theo từng loại lỗi",
+
+      "images": [
+        {
+          "url": "Grad_NLP/P5/images/figure2_explanation_score_disconnect.png",
+          "description": "Figure 2 của paper. Minh họa hiện tượng evaluator nhận ra lỗi trong explanation nhưng không phản ánh vào score.",
+          "source": "Paper Figure 2",
+          "priority": "primary",
+          "usage_note": "Không trực tiếp thuộc phần multi-model nhưng là visual tốt nhất để minh họa blind spots."
+        },
+
+        {
+          "url": "https://cdn-icons-png.flaticon.com/512/2103/2103633.png",
+          "description": "Blind spot / bug illustration",
+          "source": "Flaticon",
+          "priority": "secondary",
+          "usage_note": "Dùng nếu Figure 2 quá nhỏ hoặc khó đọc trên slide."
+        }
+      ]
+    },
+
+    {
+      "slide_id": 5,
+      "slide_title": "Kết luận và Implications",
+
+      "images": [
+        {
+          "url": "Grad_NLP/P5/images/figure1_fbi_framework.png",
+          "description": "Figure 1 từ paper. Tổng quan FBI framework gồm evaluator LLM, perturbations và các evaluation paradigms.",
+          "source": "Paper Figure 1",
+          "priority": "primary",
+          "usage_note": "Rất phù hợp để tổng kết toàn bộ paper ở slide cuối."
+        },
+
+        {
+          "url": "https://cdn-icons-png.flaticon.com/512/1055/1055687.png",
+          "description": "Warning / caution icon",
+          "source": "Flaticon",
+          "priority": "secondary",
+          "usage_note": "Đặt cạnh phần practical implications."
+        }
+      ]
+    }
+  ],
+
+  "paper_images_to_export": [
+    {
+      "filename": "figure1_fbi_framework.png",
+      "source": "Figure 1",
+      "usage": "Slide 5"
+    },
+
+    {
+      "filename": "figure2_explanation_score_disconnect.png",
+      "source": "Figure 2",
+      "usage": "Slide 4"
+    },
+
+    {
+      "filename": "table4_full.png",
+      "source": "Table 4",
+      "usage": "Backup"
+    },
+
+    {
+      "filename": "table4_reference_less_crop.png",
+      "source": "Table 4 crop",
+      "usage": "Slide 1"
+    },
+
+    {
+      "filename": "table4_reference_crop.png",
+      "source": "Table 4 crop",
+      "usage": "Slide 2"
+    },
+
+    {
+      "filename": "table4_prometheus_crop.png",
+      "source": "Table 4 crop",
+      "usage": "Slide 3"
+    }
+  ]
+}
