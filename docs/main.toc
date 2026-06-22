@@ -1,0 +1,5 @@
+\beamer@sectionintoc {1}{Introduction \& Motivation}{3}{0}{1}
+\beamer@sectionintoc {2}{Benchmark Construction}{7}{0}{2}
+\beamer@sectionintoc {3}{Evaluation Strategies}{11}{0}{3}
+\beamer@sectionintoc {4}{Results: GPT-4-Turbo}{14}{0}{4}
+\beamer@sectionintoc {5}{Multi-Model Results \& Conclusion}{18}{0}{5}
