@@ -1,0 +1,834 @@
+%% ============================================================
+%%  FBI: Find Blind Spots in Evaluator LLMs
+%%  Bản dịch tiếng Việt — compile bằng XeLaTeX hoặc LuaLaTeX
+%%  EMNLP 2024  (Hada et al.)
+%% ============================================================
+\documentclass[aspectratio=169,10pt]{beamer}
+
+% ---- QUAN TRỌNG: dùng XeLaTeX/LuaLaTeX để hỗ trợ UTF-8 tiếng Việt ----
+\usepackage{fontspec}
+\usepackage{polyglossia}
+\setmainlanguage{vietnamese}
+\setotherlanguage{english}
+% Font hỗ trợ tiếng Việt (có sẵn trên Overleaf)
+\setmainfont{DejaVu Serif}
+\setsansfont{DejaVu Sans}
+\setmonofont{DejaVu Sans Mono}
+
+% ---- Beamer theme & colour palette -------------------------
+\usetheme{Madrid}
+\usecolortheme{default}
+
+\definecolor{aclblue}{RGB}{0,70,127}
+\definecolor{acllightblue}{RGB}{210,228,245}
+\definecolor{aclred}{RGB}{180,30,30}
+\definecolor{aclgray}{RGB}{80,80,80}
+
+\setbeamercolor{structure}{fg=aclblue}
+\setbeamercolor{frametitle}{bg=aclblue, fg=white}
+\setbeamercolor{title}{bg=aclblue, fg=white}
+\setbeamercolor{block title}{bg=aclblue, fg=white}
+\setbeamercolor{block body}{bg=acllightblue}
+\setbeamercolor{alerted text}{fg=aclred}
+\setbeamercolor{footline}{bg=aclblue!80, fg=white}
+\setbeamerfont{frametitle}{size=\normalsize, series=\bfseries}
+\setbeamerfont{title}{size=\large, series=\bfseries}
+
+% Remove navigation symbols
+\setbeamertemplate{navigation symbols}{}
+
+% Footline
+\setbeamertemplate{footline}{%
+  \leavevmode%
+  \hbox{%
+    \begin{beamercolorbox}[wd=.45\paperwidth,ht=2.25ex,dp=1ex,left,leftskip=4pt]{footline}%
+      \usebeamerfont{author in head/foot}\insertshorttitle
+    \end{beamercolorbox}%
+    \begin{beamercolorbox}[wd=.40\paperwidth,ht=2.25ex,dp=1ex,center]{footline}%
+      \usebeamerfont{title in head/foot}\insertsection
+    \end{beamercolorbox}%
+    \begin{beamercolorbox}[wd=.15\paperwidth,ht=2.25ex,dp=1ex,right,rightskip=4pt]{footline}%
+      \usebeamerfont{date in head/foot}\insertframenumber/\inserttotalframenumber
+    \end{beamercolorbox}}%
+}
+
+% ---- Packages ----------------------------------------------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+% Vietnamese support: define a helper that locally switches to T5
+\usepackage[T5]{fontenc}
+\newcommand{\vn}[1]{{\fontencoding{T5}\selectfont #1}}
+\fontencoding{T1}\selectfont
+\usepackage{microtype}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{colortbl}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric}
+\usepackage{natbib}
+\usepackage{hyperref}
+
+% ---- Convenience macros ------------------------------------
+\newcommand{\good}[1]{\textcolor{green!60!black}{\textbf{#1}}}
+\newcommand{\bad}[1]{\textcolor{aclred}{\textbf{#1}}}
+\newcommand{\hl}[1]{\colorbox{yellow!40}{#1}}
+\newcommand{\fbi}{\textsc{FBI}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+
+% ---- Meta-data ---------------------------------------------
+\title[\fbi{} — EMNLP 2024]%
+      {FBI: Tìm Điểm Mù trong các LLM Đánh Giá\\
+       Sử dụng Checklist Có Thể Giải Thích Được}
+\author[Hada et al., EMNLP 2024]{Rishav Hada \and Vaibhav Adlakha \and Shehzaad Dhuliawala \\
+        \and Mrinmaya Sachan \and Siva Reddy}
+\institute{McGill / Mila \quad ETH Zürich}
+\date{EMNLP 2024}
+
+%% ============================================================
+\begin{document}
+%% ============================================================
+
+% ---- Title slide -------------------------------------------
+\begin{frame}
+  \titlepage
+  \vspace{-0.8em}
+  \begin{center}
+    \small\url{https://aclanthology.org/2024.emnlp-main.911}
+
+    \vspace{0.6em}
+    \small
+    \begin{tabular}{cll}
+      250201057 & Phan Hồng   & Hạnh   \\
+      250201056 & Văn Hồng    & Hạnh   \\
+      250201047 & Nguyễn Hải  & Đăng   \\
+      250201078 & Nguyễn Bình & Nguyên \\
+      250201066 & Nguyễn Hoàng Anh & Khoa \\
+    \end{tabular}
+  \end{center}
+\end{frame}
+
+% ---- Outline -----------------------------------------------
+\begin{frame}{Mục Lục}
+  \tableofcontents
+\end{frame}
+
+%%=============================================================
+\section{Giới thiệu \& Động lực}
+%%=============================================================
+
+\begin{frame}{LLM-as-a-Judge: Là gì và Tại sao?}
+  \begin{columns}[T]
+    \column{0.55\textwidth}
+      \textbf{LLM-as-a-Judge là gì?}
+      \begin{itemize}
+        \item Sử dụng một LLM mạnh (GPT-4, Gemini…) làm \alert{bộ đánh giá tự động} cho đầu ra của các LLM khác
+        \item Ứng dụng: chuẩn mực chatbot, bảng xếp hạng (AlpacaEval, MT-Bench), mô hình phần thưởng RLHF
+      \end{itemize}
+
+      \vspace{0.6em}
+      \textbf{Tại sao hấp dẫn?}
+      \begin{itemize}
+        \item \good{$\sim$99\% rẻ hơn} so với chú thích thủ công
+        \item \good{Gần tức thì} và mở rộng vô hạn
+        \item Tương quan cao với con người được báo cáo ($>$80\%)
+      \end{itemize}
+
+    \column{0.42\textwidth}
+      \begin{block}{Con người vs.\ LLM-as-a-Judge}
+        \small
+        \begin{tabular}{lcc}
+          \toprule
+          \textbf{Tiêu chí} & \textbf{Con người} & \textbf{LLM} \\
+          \midrule
+          Tốc độ       & Chậm   & \good{Nhanh}  \\
+          Chi phí      & Cao    & \good{Thấp}   \\
+          Mở rộng & Thấp & \good{Cao}  \\
+          Nhất quán    & Thấp   & \good{Cao}    \\
+          Độ tin cậy   & \good{Gold} & \bad{?}  \\
+          \bottomrule
+        \end{tabular}
+      \end{block}
+      \vspace{0.4em}
+      \small\alert{Dù có lợi thế vận hành, \textbf{độ tin cậy} của các LLM đánh giá vẫn là câu hỏi mở.}
+  \end{columns}
+\end{frame}
+
+% ----
+\begin{frame}{Tại Sao Đây Là Vấn Đề?}
+  \begin{columns}[T]
+    \column{0.5\textwidth}
+      \textbf{Các sai lệch đã biết của bộ đánh giá LLM}
+      \begin{itemize}
+        \item \alert{Position bias} — ưu tiên câu trả lời đầu tiên trong pairwise
+        \item \alert{Verbosity bias} — ưu tiên câu trả lời dài hơn bất kể độ chính xác
+        \item \alert{Self-preference bias} — ưu tiên đầu ra từ cùng gia đình mô hình
+      \end{itemize}
+
+      \vspace{0.5em}
+      \textbf{Bẫy tương quan}
+      \begin{itemize}
+        \item Nghiên cứu trước đo tương quan Pearson/Spearman \emph{tổng thể}
+        \item Tương quan cao có thể \textbf{ẩn giấu} các lỗi hợp chi tiết
+        \item Không trả lời được: \emph{LLM có thực sự phát hiện các loại lỗi cụ thể không?}
+      \end{itemize}
+
+    \column{0.47\textwidth}
+      \begin{alertblock}{Khoảng Trống Nghiên Cứu}
+        Chưa có nghiên cứu nào thực hiện \textbf{đánh giá chi tiết theo từng loại lỗi} của các LLM đánh giá.\\[0.4em]
+        Chúng ta cần một \emph{checklist có thể giải thích} để chẩn đoán \textbf{blind spot} trước khi tin tưởng LLM làm bộ đánh giá.
+      \end{alertblock}
+
+      \vspace{0.4em}
+      \begin{block}{Hậu Quả}
+        Nếu các bộ đánh giá có blind spot ẩn $\Rightarrow$ xếp hạng leaderboard \textbf{bị sai lệch} $\Rightarrow$ các mô hình tệm hơn được triển khai sản xuất.
+      \end{block}
+  \end{columns}
+\end{frame}
+
+% ----
+\begin{frame}{Các Câu Hỏi Nghiên Cứu}
+  \textbf{Câu hỏi nghiên cứu cốt lõi (RQ):} \emph{Các bộ đánh giá LLM hiện tại có thể phát hiện đáng tin cậy các lỗi chi tiết qua 4 năng lực cốt lõi không?}
+
+  \vspace{0.6em}
+  \begin{columns}[T]
+    \column{0.48\textwidth}
+      \begin{block}{RQ1 — Viết Dạng Dài (LF)}
+        Bộ đánh giá có bắt được lỗi mạch lạc, lỗi ngữ pháp, chính tả, mâu thuẫn thứ tự thời gian không?\\
+        \small\textit{Ví dụ: ``These strategies \textbf{is}'' thay vì ``are''}
+      \end{block}
+
+      \vspace{0.4em}
+      \begin{block}{RQ2 — Độ Chính Xác Thực Tế (F)}
+        Bộ đánh giá có phát hiện được việc thay thế thực thể, số sai, sự kiện ngược lại không?\\
+        \small\textit{Ví dụ: ``Poland'' $\to$ ``London''}
+      \end{block}
+
+    \column{0.48\textwidth}
+      \begin{block}{RQ3 — Tuân Thủ Hướng Dẫn (IF)}
+        Bộ đánh giá có xác định vi phạm định dạng, làm thiếu/thừa, bỏ qua ràng buộc không?\\
+        \small\textit{Ví dụ: 6 dòng thay vì 4 dòng yêu cầu}
+      \end{block}
+
+      \vspace{0.4em}
+      \begin{block}{RQ4 — Lập Luận (R)}
+        Bộ đánh giá có phát hiện được lỗi số học, công thức sai, đơn vị không đúng không?\\
+        \small\textit{Ví dụ: ``$2+3=6$'' thay vì $5$}
+      \end{block}
+  \end{columns}
+\end{frame}
+
+% ----
+\begin{frame}{Giới thiệu Framework \fbi{}}
+  \begin{columns}[T]
+    \column{0.50\textwidth}
+      \textbf{\fbi{} = Tìm Điểm Mù trong các LLM Đánh Giá bằng Checklist Có Thể Giải Thích}
+
+      \vspace{0.4em}
+      \textbf{Logic cốt lõi (dựa trên perturbation):}
+      \begin{enumerate}
+        \item Bắt đầu từ \emph{câu trả lời chuẩn} $A_{\text{gold}}$ chất lượng cao
+        \item Thêm lỗi \emph{có kiểm soát} $\rightarrow A_{\text{perturb}}$
+        \item Nạp cho bộ đánh giá; quan sát sự thay đổi điểm số
+      \end{enumerate}
+
+      \vspace{0.3em}
+      \begin{align*}
+        \text{Bộ đánh giá tốt:} &\quad s(A_{\text{perturb}}) < s(A_{\text{gold}}) \\
+        \text{Blind spot:}       &\quad s(A_{\text{perturb}}) \approx s(A_{\text{gold}})
+      \end{align*}
+
+      \vspace{0.2em}
+      \small\textbf{Quy mô:} 4 năng lực · 22 loại lỗi · 2.400 tuple · 17 người chú thích · 3 paradigm · 5 LLM
+
+    \column{0.47\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{images/figure1_fbi_framework.png}
+      \\\vspace{0.2em}\tiny\textit{Hình 1: Pipeline của framework \fbi{}}
+  \end{columns}
+\end{frame}
+
+%%=============================================================
+\section{Xây Dựng Benchmark}
+%%=============================================================
+
+\begin{frame}{Pipeline Xây Dựng Benchmark}
+  \begin{columns}[T]
+    \column{0.55\textwidth}
+      \textbf{Đầu vào: 500 prompt} từ 6 dataset đã thiết lập
+      \begin{itemize}
+        \item WizardLM, MT-Bench, UltraChat, LIMA, LLMBar, IFEval
+      \end{itemize}
+
+      \vspace{0.4em}
+      \textbf{Pipeline ba giai đoạn:}
+      \begin{enumerate}
+        \item \textbf{Tạo câu trả lời vàng} — GPT-4-Turbo để tạo ra các câu trả lời chuẩn xác nhất cho từng prompt.
+        \item \textbf{Tạo perturbation} — GPT-4-Turbo Tạo ra các biến thể lỗi dựa trên 22 danh mục lỗi cụ thể.
+        \item \textbf{Kiểm tra bởi con người} — 17 sinh viên sau đại học kiểm tra tính hợp lệ của perturbation.
+      \end{enumerate}
+
+      \vspace{0.4em}
+      \textbf{Đầu ra:} 2.400 tuple $(\textit{prompt},\, A_{\text{gold}},\, A_{\text{perturb}})$
+
+    \column{0.42\textwidth}
+      \begin{alertblock}{Nguyên Tắc Thiết Kế}
+        Benchmark \textbf{không} đo trực tiếp chất lượng câu trả lời. Nó đo \textbf{khả năng phát hiện lỗi của bộ đánh giá} — một nhiệm vụ khác và khó hơn về cơ bản.
+      \end{alertblock}
+
+      \vspace{0.4em}
+      \begin{block}{Nhãn Annotation}
+        \small
+        \begin{itemize}
+          \item \textbf{Valid} — lỗi rõ ràng tồn tại
+          \item \textbf{Invalid} — lỗi không tồn tại / sai loại
+          \item \textbf{Score-Invariant} — thay đổi vô hại
+          \item \textbf{Not Relevant} — prompt lạc đề
+          \item \textbf{Not Sure}
+        \end{itemize}
+      \end{block}
+  \end{columns}
+\end{frame}
+
+% ----
+\begin{frame}{Các Danh Mục Cốt Lõi}
+  \begin{columns}[T]
+    \column{0.42\textwidth}
+      \centering
+      \includegraphics[width=0.75\textwidth]{images/four_categories_img.png}
+      \\\vspace{0.15em}\tiny\textit{Bốn danh mục năng lực trong \fbi{}}
+
+    \column{0.55\textwidth}
+      \begin{block}{\scriptsize Viết Dạng Dài (LF)}
+        \scriptsize Bài luận sáng tạo/phân tích.
+        \textit{``Làm thế nào để cải thiện quản lý thời gian?''}
+        — lỗi cần \textbf{đọc toàn bộ tài liệu}.
+      \end{block}
+      \vspace{0.20em}
+      \begin{block}{\scriptsize Thực Tế (F)}
+        \scriptsize Câu hỏi có thể kiểm chứng khách quan.
+        \textit{``Chức năng của tụ điện là gì?''}
+        — lỗi cần kiểm tra \textbf{kiến thức thế giới}.
+      \end{block}
+      \vspace{0.20em}
+      \begin{block}{\scriptsize Tuân Thủ Hướng Dẫn (IF)}
+        \scriptsize Tạo sinh có ràng buộc.
+        \textit{``Viết bài thơ 4 dòng dùng: peace, sky, race, ground.''}
+        — lỗi cần \textbf{kiểm tra ràng buộc}.
+      \end{block}
+      \vspace{0.20em}
+      \begin{block}{\scriptsize Lập Luận (R)}
+        \scriptsize Bài toán toán học/logic.
+        \textit{``Gậy+bóng = \$1,10; gậy đắt hơn \$1. Bóng giá bao nhiêu?''}
+        — lỗi cần kiểm tra \textbf{từng bước}.
+      \end{block}
+  \end{columns}
+\end{frame}
+
+% ----
+\begin{frame}{22 Danh Mục Perturbation (Bảng~2)}
+  \begin{columns}[T]
+    \column{0.52\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{images/22_perturbation.png}
+      \\\vspace{0.15em}\tiny\textit{Bảng 2: Tất cả 22 danh mục perturbation qua 4 loại nhiệm vụ}
+
+    \column{0.45\textwidth}
+      \small
+      \textbf{Nguyên tắc thiết kế:}
+      \begin{itemize}
+        \item Mỗi perturbation chỉ nhắm một \textbf{chiều lỗi}
+        \item Lỗi có thể \textbf{giải thích được} — diễn giải với checklist
+        \item Tránh các thay đổi đồng thời gây nhiễu attribution
+      \end{itemize}
+
+      \vspace{0.5em}
+      \textbf{Ví dụ nhanh:}
+      \begin{itemize}
+        \item \textit{Entity:} ``Poland'' $\to$ ``London''
+        \item \textit{Tính toán:} $2+3=5$ $\to$ $2+3=6$
+        \item \textit{Do More:} thơ 4 dòng $\to$ 6 dòng
+        \item \textit{Chronology:} sắp xếp lại sự kiện lịch sử
+      \end{itemize}
+
+      \vspace{0.4em}
+      \begin{alertblock}{}
+        \small 22 danh mục bao phủ \textbf{các lỗi thường gặp nhất trong thực tế} của văn bản LLM.
+      \end{alertblock}
+  \end{columns}
+\end{frame}
+
+% ----
+\begin{frame}{Tạo Lỗi Tự Động \& Human-in-the-Loop}
+  \begin{columns}[T]
+    \column{0.55\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{images/perturbation_human_loop.png}
+      \\\vspace{0.15em}\tiny\textit{Pipeline tạo perturbation + kiểm tra human-in-the-loop}
+
+    \column{0.42\textwidth}
+      \small
+      \textbf{Các lỗi phổ biến trong perturbation tự động:}
+      \begin{enumerate}
+        \item GPT-4-Turbo \emph{lệch} sang loại lỗi sai
+        \item Lỗi quá nhẹ hoặc quá rõ ràng
+        \item Giải thích nhắc đến lỗi nhưng \textbf{văn bản không phản ánh}
+      \end{enumerate}
+
+      \vspace{0.4em}
+      \textbf{Thiết lập:} 17 sinh viên cao học review toàn bộ 2,400 perturbation\\
+      Dán nhãn mỗi perturbation:\\
+      \quad\textbf{Valid} / Invalid / Score-Invariant /\\
+      \quad Không liên quan / Không chắc\\[0.3em]
+      Invalid $\Rightarrow$ tạo lại cho đến khi hợp lệ.
+
+      \vspace{0.4em}
+      \begin{alertblock}{Score-Invariant (SI): 516 trường hợp}
+        \small Thay đổi chỉ paraphrase \textbf{không nên} giảm điểm. Dùng để phát hiện \textbf{bộ đánh giá quá khắt khe}.
+      \end{alertblock}
+  \end{columns}
+\end{frame}
+
+%%=============================================================
+\section{Các Chiến Lược Đánh Giá}
+%%=============================================================
+
+\begin{frame}{Ba Paradigm Đánh Giá}
+  \begin{columns}[T]
+    \column{0.30\textwidth}
+      \begin{block}{Paradigm 1\\Chấm Điểm Một Câu Trả Lời}
+        \centering
+        \vspace{0.3em}
+        Instruction + $A_{\text{perturb}}$\\
+        $\downarrow$\\
+        Điểm số (1–3)\\
+        \vspace{0.3em}
+        \small 5 chiến lược prompting
+      \end{block}
+
+    \column{0.30\textwidth}
+      \begin{block}{Paradigm 2\\So Sánh Cặp (Pairwise)}
+        \centering
+        \vspace{0.3em}
+        Instruction + $A_{\text{gold}}$ vs.\ $A_{\text{perturb}}$\\
+        $\downarrow$\\
+        Phán quyết (đầu)\\
+        \vspace{0.3em}
+        \small 5 chiến lược prompting
+      \end{block}
+
+    \column{0.36\textwidth}
+      \begin{block}{Paradigm 3\\Chấm Điểm Có Tài Liệu Tham Chiếu}
+        \centering
+        \vspace{0.3em}
+        Instruction + $A_{\text{gold}}$ (tham chiếu) + $A_{\text{perturb}}$\\
+        $\downarrow$\\
+        Điểm số (1–3)\\
+        \vspace{0.3em}
+        \small 1 chiến lược (thông tin nhất)
+      \end{block}
+  \end{columns}
+
+  \vspace{0.7em}
+  \begin{columns}[c]
+    \column{0.6\textwidth}
+      \textbf{Metric:} \% perturbation \textbf{không được phát hiện} (điểm số không đổi)\\
+      $\downarrow$ thấp hơn là tốt \quad|\quad SI$\uparrow$ cao hơn là tốt (không false positive)
+    \column{0.35\textwidth}
+      \small\textbf{5 LLM đánh giá:} GPT-4-Turbo, Gemini-1.5-Pro, Claude-3-Opus, LLaMA-3-70B-Instruct, Prometheus~2
+  \end{columns}
+\end{frame}
+
+% ----
+\begin{frame}{Chấm Điểm Một Câu Trả Lời — 5 Chiến Lược}
+  \begin{center}
+  \small
+  \begin{tabular}{llp{7cm}}
+    \toprule
+    \textbf{Chiến lược} & \textbf{Đầu vào} & \textbf{Đầu ra} \\
+    \midrule
+    \textbf{Vanilla*}    & Instruction + Answer & Chỉ điểm số \\
+    \textbf{Vanilla}     & Instruction + Answer & Giải thích $\to$ Điểm số \\
+    \textbf{Rubric}      & Instruction + Answer + Rubric chấm & Giải thích $\to$ Điểm số \\
+    \textbf{Axis}        & Instruction + Answer + Trục đánh giá & Giải thích $\to$ Điểm số \\
+    \textbf{Axis+Rubric} & Instruction + Answer + Axis + Rubric & Giải thích $\to$ Điểm số \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+
+  \vspace{0.5em}
+  \begin{columns}[T]
+    \column{0.48\textwidth}
+      \textbf{Giả thuyết:} hướng dẫn nhiều hơn $\Rightarrow$ phát hiện tốt hơn\\[0.3em]
+      \textit{Axis} = chiều khớp với nhiệm vụ (ví dụ: ``factual accuracy'' cho nhiệm vụ F)\\
+      \textit{Rubric} = tiêu chí chấm điểm chi tiết theo từng chiều
+    \column{0.48\textwidth}
+      \begin{alertblock}{Tinh báo trước}
+        Thêm rubric/axis \textbf{làm giảm} hiệu suất phát hiện trong chấm điểm một câu trả lời — sẽ giải thích thêm trong Kết quả.
+      \end{alertblock}
+  \end{columns}
+\end{frame}
+
+% ----
+\begin{frame}{So Sánh Cặp (Pairwise) — 5 Chiến Lược}
+  \begin{center}
+  \small
+  \begin{tabular}{llp{6cm}}
+    \toprule
+    \textbf{Chiến lược} & \textbf{Đầu vào} & \textbf{Đầu ra} \\
+    \midrule
+    \textbf{Pairwise*}  & Instruction + $A_1$, $A_2$ & Chỉ phán quyết \\
+    \textbf{Pairwise}   & Instruction + $A_1$, $A_2$ & Giải thích $\to$ Phán quyết \\
+    \textbf{Rules}      & Instruction + $A_1$, $A_2$ + Quy tắc & Giải thích $\to$ Phán quyết \\
+    \textbf{Axis}       & Instruction + $A_1$, $A_2$ + Axis & Giải thích $\to$ Phán quyết \\
+    \textbf{Axis+Rules} & Instruction + $A_1$, $A_2$ + Axis + Quy tắc & Giải thích $\to$ Phán quyết \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+
+  \vspace{0.5em}
+  \begin{columns}[T]
+    \column{0.55\textwidth}
+      \textbf{Kiểm soát position bias:}
+      \begin{itemize}
+        \item Chạy \textbf{hai lần}, đảo vị trí của $A_{\text{gold}} / A_{\text{perturb}}$
+        \item Chỉ tính là phát hiện nếu bộ đánh giá nhất quán ưu tiên $A_{\text{gold}}$
+      \end{itemize}
+    \column{0.40\textwidth}
+      \begin{block}{Điểm khác chính với một câu trả lời}
+        Trong pairwise, chiến lược nâng cao \textbf{có ích} — bộ đánh giá dùng quy tắc như \emph{checklist so sánh}, không phải neo điểm cố định.
+      \end{block}
+  \end{columns}
+\end{frame}
+
+%%=============================================================
+\section{Kết Quả: GPT-4-Turbo}
+%%=============================================================
+
+\begin{frame}{Chấm Điểm Một Câu Trả Lời: GPT-4-Turbo Bỏ Lỡ $>$50\% Lỗi}
+  \begin{columns}[T]
+    \column{0.52\textwidth}
+      \small
+      \begin{tabular}{lrrrrc}
+        \toprule
+        \textbf{Chiến lược} & \textbf{LF}$\downarrow$ & \textbf{F}$\downarrow$ & \textbf{IF}$\downarrow$ & \textbf{R}$\downarrow$ & \textbf{SI}$\uparrow$ \\
+        \midrule
+        Vanilla*      & 63 & 58 & 63 & 30 & 60 \\
+        \rowcolor{acllightblue}
+        Vanilla       & \good{57} & \good{54} & \good{57} & \good{25} & 71 \\
+        Rubric        & \bad{85} & \bad{73} & \bad{80} & 33 & 96 \\
+        Axis          & \bad{83} & \bad{74} & 75 & 43 & 96 \\
+        Axis+Rubric   & \bad{86} & \bad{76} & 77 & 37 & \good{97} \\
+        \bottomrule
+      \end{tabular}
+      \vspace{0.3em}
+      \small Tất cả giá trị = \% không được phát hiện. $\downarrow$ thấp hơn = tốt hơn; SI$\uparrow$ cao hơn = tốt hơn.
+
+    \column{0.44\textwidth}
+      \textbf{Phát hiện chính:}
+      \begin{itemize}
+        \item Vanilla là \good{chiến lược tốt nhất} (đơn giản là thắng)
+        \item \bad{Rubric/Axis làm xấu hơn} rõ rệt — tới +29pp
+        \item Lập luận (\good{25\%}) được phát hiện tốt hơn nhiều so với LF/F/IF
+      \end{itemize}
+
+      \vspace{0.5em}
+      \begin{alertblock}{Nghịch Lý Rubric}
+        Hướng dẫn nhiều hơn $\neq$ phát hiện tốt hơn.\\
+        Rubric \textbf{neo} mô hình vào các tiêu chí liệt kê và khiến nó bỏ qua các lỗi ngoài phạm vi rubric.
+      \end{alertblock}
+  \end{columns}
+\end{frame}
+
+% ----
+\begin{frame}{So Sánh Cặp: Mô Hình Ngược Lại}
+  \begin{columns}[T]
+    \column{0.52\textwidth}
+      \small
+      \begin{tabular}{lrrrrc}
+        \toprule
+        \textbf{Chiến lược} & \textbf{LF}$\downarrow$ & \textbf{F}$\downarrow$ & \textbf{IF}$\downarrow$ & \textbf{R}$\downarrow$ & \textbf{SI}$\uparrow$ \\
+        \midrule
+        Pairwise*   & 73 & 52 & 83 & 36 & \good{93} \\
+        Pairwise    & 77 & 46 & 67 & 35 & 74 \\
+        Rules       & 75 & 63 & 68 & 41 & 74 \\
+        \rowcolor{acllightblue}
+        Axis        & \good{64} & \good{44} & \good{59} & \good{27} & 71 \\
+        Axis+Rules  & \good{64} & \good{42} & 61 & 32 & 72 \\
+        \bottomrule
+      \end{tabular}
+      \vspace{0.3em}
+      \small Tất cả giá trị = \% không được phát hiện.
+
+    \column{0.44\textwidth}
+      \textbf{Đảo chiều mô hình:}
+      \begin{itemize}
+        \item Chiến lược nâng cao \good{có ích} trong pairwise (ngược với chấm một câu)
+        \item Axis+Rules: tốt nhất cho F (\good{42\%}) và LF (\good{64\%})
+      \end{itemize}
+
+      \vspace{0.4em}
+      \begin{block}{Tại sao khác nhau?}
+        Trong pairwise, bộ đánh giá có \textbf{ngữ cảnh so sánh trực tiếp}. Quy tắc đóng vai trò \emph{checklist sự khác biệt}, không phải neo điểm tuyệt đối.
+      \end{block}
+
+      \vspace{0.3em}
+      \small \bad{Vẫn còn: 64\% LF và 61\% IF không được phát hiện dù với chiến lược tốt nhất.}
+  \end{columns}
+\end{frame}
+
+% ----
+\begin{frame}{Có Tài Liệu Tham Chiếu: Paradigm Tốt Nhất — Nhưng Chưa Đủ}
+  \begin{columns}[T]
+    \column{0.60\textwidth}
+      \small
+      \begin{tabular}{lrrr}
+        \toprule
+        \textbf{Task} & \textbf{Tham chiếu} & \textbf{Vanilla} & \textbf{Cải thiện} \\
+        \midrule
+        LF  & \good{26\%} & 57\% & $-$31 pp ($\sim$2$\times$) \\
+        F   & \good{11\%} & 54\% & $-$43 pp ($\sim$5$\times$) \\
+        R   & \good{4\%}  & 25\% & $-$21 pp (gần hoàn hảo) \\
+        IF  & \bad{49\%}  & 57\% & $-$8 pp \textbf{(vẫn cao!)} \\
+        \bottomrule
+      \end{tabular}
+
+      \vspace{0.5em}
+      \textbf{Thành công:}
+      \begin{itemize}
+        \item Lỗi thực tế: \good{11\%} không phát hiện — tham chiếu giúp so sánh sự kiện
+        \item Lập luận: \good{4\%} — bộ đánh giá có thể kiểm tra toán với tham chiếu
+      \end{itemize}
+
+    \column{0.37\textwidth}
+      \begin{alertblock}{Blind Spot Dai Dẳng: IF (49\%)}
+      \small
+        Thậm chí có câu trả lời chuẩn, gần một nửa vi phạm instruction-following không được phát hiện.\\[0.4em]
+        \textit{Lí do:} Lỗi IF cần so sánh câu trả lời với \textbf{instruction}, không phải với tham chiếu. Câu chuẩn không cho biết ràng buộc có được thỏa hay không.
+      \end{alertblock}
+
+      \vspace{0.3em}
+      \begin{block}{Hạn Chế Thực Tế}
+      \small
+        Đánh giá có tham chiếu \textbf{không áp dụng được} cho câu hỏi mở trong triển khai thực tế.
+      \end{block}
+  \end{columns}
+\end{frame}
+
+% ---- SLIDE 17: Fixed layout --------------------------------
+\begin{frame}{Sự Phân Tách Kiến Thức -- Điểm Số (Hình~2)}
+  \begin{columns}[T]
+    \column{0.44\textwidth}
+      \centering
+      \includegraphics[width=0.95\linewidth]{images/figure2_explanation_score_disconnect.png}
+      \\\vspace{0.15em}\tiny\textit{Hình 2: Các trường hợp phát hiện qua giải thích vs.\ điểm số}
+
+    \column{0.53\textwidth}
+    \footnotesize
+      \textbf{Q:} Đọc \emph{giải thích} có tiết lộ được nhiều lỗi hơn không?
+
+      \vspace{0.15em}
+      \textbf{Phương pháp:} Với mỗi trường hợp không phát hiện, kiểm tra với GPT-3.5-Turbo xem giải thích có \emph{đề cập} lỗi không.
+
+      \vspace{0.15em}
+      \textbf{Kết quả:} Vanilla chỉ khôi phục \bad{$\sim$36 trường hợp bổ sung} / 904 không phát hiện ($<$4\%).
+
+      \vspace{0.1em}
+      \begin{alertblock}{Phát Hiện Then Chốt}
+        \small Bộ đánh giá \textbf{đề cập đến lỗi} trong giải thích nhưng vẫn \textbf{cho điểm hoàn hảo}.\\[0.2em]
+        \textit{``The answer contains a grammatical error…'' $\to$ Score: 3/3}
+      \end{alertblock}
+
+      \vspace{0.1em}
+      \begin{block}{Nguyên Nhân Gốc Rễ}
+        \small Không phải vấn đề \textbf{nhận thức} — LLM thấy lỗi.\\
+        Đây là vấn đề \textbf{hiệu chỉnh mức độ nghiêm trọng} — LLM không phạt các lỗi nhỏ theo đánh giá của chúng.
+      \end{block}
+  \end{columns}
+\end{frame}
+
+%%=============================================================
+\section{Kết Quả Đa Mô Hình \& Kết Luận}
+%%=============================================================
+
+\begin{frame}{So Sánh Đa Mô Hình: Không Có Tài Liệu Tham Chiếu}
+  \begin{columns}[T]
+    \column{0.52\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{images/table4_reference_less_crop.png}
+      \\\vspace{0.15em}\tiny\textit{Bảng 4 (phần không tham chiếu): \% không phát hiện theo mô hình}
+
+    \column{0.45\textwidth}
+      \small
+      \begin{itemize}
+        \item \good{GPT-4-Turbo} là bộ đánh giá không tham chiếu mạnh nhất
+        \item \textbf{Gemini-1.5-Pro}: hạng trung, mạnh về IF một câu trả lời
+        \item \bad{Claude-3-Opus}: kém hơn GPT và Gemini (chỉ test Vanilla do chi phí API)
+        \item \bad{LLaMA-3-70B}: bỏ lỡ $>$85\% lỗi LF/F/IF
+      \end{itemize}
+
+      \vspace{0.5em}
+      \begin{alertblock}{Kết Luận Chính}
+        Thậm chí \textbf{GPT-4-Turbo} vẫn bỏ lỡ $>$50\% lỗi trong LF, F, IF khi không có câu trả lời tham chiếu.
+      \end{alertblock}
+  \end{columns}
+\end{frame}
+
+% ----
+\begin{frame}{Bất Ngờ: LLaMA Dẫn Đầu Có Tham Chiếu — Nhưng Vì Lí Do Sai}
+  \begin{columns}[T]
+    \column{0.52\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{images/table4_reference_crop.png}
+      \\\vspace{0.15em}\tiny\textit{Bảng 4 (phần có tham chiếu): \% không phát hiện + điểm SI}
+
+      \vspace{0.4em}
+      \small
+      LLaMA trông gần hoàn hảo (1–5\% không phát hiện).\\[0.25em]
+      Nhưng SI$\uparrow$: LLaMA chỉ cho điểm đầy đủ trong \bad{13\%} trường hợp score-invariant.\\[0.25em]
+      $\Rightarrow$ Nó phạt cả các câu trả lời \textbf{đúng nhưng đã được diễn giải lại}.
+
+    \column{0.45\textwidth}
+      \begin{alertblock}{Bẫy Bộ Đánh Giá Quá Khắt Khe}
+        \small Một mô hình có thể cho điểm không phát hiện thấp đơn giản bằng cách \textbf{phạt tất cả} — kể cả câu trả lời đúng.\\[0.3em]
+        Số tốt $\neq$ bộ đánh giá tốt.\\
+        Kiểm tra \textbf{cả hai} tỉ lệ phát hiện \emph{và} tỉ lệ false positive (SI).
+      \end{alertblock}
+
+      \vspace{0.4em}
+      \begin{block}{Bài Học}
+        \small Luôn bao gồm các trường hợp \textbf{score-invariant} để kiểm tra tính quá khắt khe.
+      \end{block}
+  \end{columns}
+\end{frame}
+
+% ----
+\begin{frame}{Prometheus 2: Huấn Luyện Chuyên Biệt Có Giúp Ích?}
+  \begin{columns}[T]
+    \column{0.52\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{images/table4_prometheus_crop.png}
+      \\\vspace{0.15em}\tiny\textit{Bảng 4 (phần Prometheus 2, có tham chiếu)}
+
+      \vspace{0.4em}
+      \small
+      \textbf{Prometheus 2:} fine-tuned trên phản hồi con người chuyên biệt cho đánh giá.\\[0.3em]
+      \textbf{Kỳ vọng:} mô hình chuyên biệt nên vượt LLM đa năng.\\[0.3em]
+      \textbf{Thực tế:} thua GPT-4-Turbo gần như mọi danh mục.\\
+      \quad Thực tế: GPT \good{11\%} vs.\ Prometheus \bad{62\%}
+
+    \column{0.45\textwidth}
+      \begin{alertblock}{Kết Luận Chính}
+        \small Huấn luyện chuyên biệt \textbf{không} giải quyết blind spot.\\[0.3em]
+        Prometheus học \emph{bắt chước} mô hình chấm của con người, chứ không thực sự \emph{phát hiện} lỗi.
+      \end{alertblock}
+
+      \vspace{0.4em}
+      \begin{block}{Ý Nghĩa}
+        \small Cần các mục tiêu huấn luyện tốt hơn — không chỉ fine-tune nhiều hơn trên cùng tín hiệu phản hồi.
+      \end{block}
+  \end{columns}
+\end{frame}
+
+% ----
+\begin{frame}{Blind Spot Theo Loại Lỗi: Điều Gì Khó Nhất?}
+  \begin{columns}[T]
+    \column{0.48\textwidth}
+      \begin{block}{\good{Dễ Phát Hiện Nhất} — Lập Luận}
+        \begin{itemize}
+          \item Lỗi tính toán (ví dụ: $2+3=6$)
+          \item Công thức sai
+          \item Đơn vị không đúng
+        \end{itemize}
+        \textit{Lí do:} Bộ đánh giá có thể kiểm chứng toán học; lỗi \textbf{quan sát được cục bộ}.
+      \end{block}
+
+    \column{0.48\textwidth}
+      \begin{alertblock}{\bad{Khó Phát Hiện Nhất} ($>$90\% không phát hiện)}
+        \begin{tabular}{lp{3.5cm}}
+          \toprule
+          \textbf{Lỗi} & \textbf{Không PH} \\
+          \midrule
+          Chronology (LF)        & $\sim$100\% \\
+          Comprehensiveness (LF) & 91–100\% \\
+          Remove Fact (F)        & 94–99\% \\
+          Assumptions (IF)       & 95–98\% \\
+          \bottomrule
+        \end{tabular}
+      \end{alertblock}
+  \end{columns}
+
+  \vspace{0.5em}
+  \begin{block}{Mô Hình: Lỗi Cục Bộ vs.\ Phân Tán}
+    \centering
+    \textbf{Bộ đánh giá phát hiện tốt các lỗi \good{cục bộ, có thể kiểm chứng}.}\\
+    \textbf{Bộ đánh giá thất bại với các lỗi \bad{tinh tế, trải rộng} cần đọc toàn bộ tài liệu.}
+  \end{block}
+\end{frame}
+
+% ----
+\begin{frame}{Kết Luận \& Ý Nghĩa}
+  \begin{columns}[T]
+    \column{0.48\textwidth}
+      \textbf{Kết luận chính:}
+      \begin{enumerate}
+      \setlength{\itemsep}{0.2em}
+        \item LLM bỏ lỡ \bad{$>$50\% lỗi} trung bình thậm chí với mô hình tốt nhất (GPT-4-Turbo)
+        \item Vấn đề là \alert{hiệu chỉnh mức độ nghiêm trọng}, không phải nhận thức — LLM thấy lỗi nhưng không phạt
+        \item Bộ đánh giá chuyên biệt (Prometheus~2) \bad{không} vượt GPT-4-Turbo
+        \item Đánh giá có tham chiếu giúp ích đáng kể nhưng \bad{không phải lúc nào cũng áp dụng được}
+      \end{enumerate}
+
+    \column{0.48\textwidth}
+      \textbf{Khuyến nghị thực tế:}
+      \begin{itemize}
+      \setlength{\itemsep}{0.15em}
+        \item[\checkmark] Ưu tiên \good{đánh giá có tham chiếu} khi có câu trả lời chuẩn
+        \item[\checkmark] Dùng \good{prompt đơn giản} hơn là rubric phức tạp trong chấm một câu
+        \item[\checkmark] Luôn bao gồm trường hợp \good{score-invariant} để phát hiện bộ đánh giá quá khắt khe
+        \item[$\times$] Không tin mù quáng vào leaderboard và benchmark dựa trên LLM
+      \end{itemize}
+
+      \vspace{0.4em}
+      \textbf{Hướng nghiên cứu tương lai:}
+      \begin{itemize}
+      \setlength{\itemsep}{0.15em}
+        \item Đánh giá đa ngôn ngữ
+        \item Bộ đánh giá đa tác nhân / tranh luận
+        \item Cơ chế hiệu chỉnh tốt hơn
+        \item Nhiệm vụ sử dụng công cụ và lập kế hoạch
+      \end{itemize}
+  \end{columns}
+\end{frame}
+
+% ---- Final quote -------------------------------------------
+{
+\setbeamercolor{background canvas}{bg=aclblue}
+\setbeamercolor{normal text}{fg=white}
+\begin{frame}
+  \usebeamercolor[fg]{normal text}
+  \centering
+  \vspace{1em}
+  \Large
+  ``LLM có thể \emph{tạo sinh} văn bản rất tốt,\\
+  nhưng \emph{đánh giá} chất lượng văn bản là\\
+  \textbf{khó hơn nhiều so với những gì chúng ta đã giả định.}''
+
+  \vspace{1.5em}
+  \normalsize
+  \fbi{}: Tìm Blind Spot trong các LLM Đánh Giá\\
+  Sử dụng Checklist Có Thể Giải Thích Được\\[0.5em]
+  \small Hada et al.\ — EMNLP 2024\\
+  \url{https://aclanthology.org/2024.emnlp-main.911}
+\end{frame}
+}
+
+%% ============================================================
+\end{document}
+%% ============================================================
